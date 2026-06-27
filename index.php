@@ -16,7 +16,7 @@ require_once 'includes/config.php';
 
     <p>Vous êtes connecté.</p>
 
-    <a class="bouton" href="#">Lancer un QCM</a>
+    <a class="bouton" href="qcm.php">Lancer un QCM</a>
 
 <?php else: ?>
 

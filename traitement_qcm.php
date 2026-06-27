@@ -57,5 +57,5 @@ $_SESSION['resultat_qcm'] = [
     'details' => $details
 ];
 
-header('Location: resultats.php');
+header('Location: resultat.php');
 exit();

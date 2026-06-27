@@ -19,11 +19,17 @@ require_once 'includes/header.php';
 </p>
 
 <p>
-    <a href="deconnexion.php">Se déconnecter</a>
+    <a href="historique.php">Voir mon historique</a>
 </p>
 
+<?php if (isset($_SESSION['utilisateur_role']) && $_SESSION['utilisateur_role'] === 'admin'): ?>
+    <p>
+        <a href="admin/index.php">Accéder à l'administration</a>
+    </p>
+<?php endif; ?>
+
 <p>
-    <a href="qcm.php">Lancer un QCM</a>
+    <a href="deconnexion.php">Se déconnecter</a>
 </p>
 
 <?php
