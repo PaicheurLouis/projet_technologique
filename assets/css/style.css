@@ -109,3 +109,24 @@ button {
     padding: 10px 15px;
     cursor: pointer;
 }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: white;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+}
+
+th {
+    background-color: #f0f0f0;
+}
+
+.moyenne {
+    margin-top: 20px;
+    font-size: 18px;
+}   

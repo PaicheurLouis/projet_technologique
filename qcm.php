@@ -28,7 +28,7 @@ foreach ($questions as $question) {
 
     <p>Répondez aux 10 questions suivantes.</p>
 
-    <form action="resultat.php" method="POST">
+    <form method="POST" action="resultats.php">
 
         <?php foreach ($questions as $index => $question): ?>
 
