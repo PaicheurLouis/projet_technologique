@@ -3,34 +3,37 @@ require_once 'includes/config.php';
 
 if (!isset($_SESSION['utilisateur_id'])) {
     header('Location: connexion.php');
-    exit();
+    exit;
 }
 
-$stmt = $pdo->query("SELECT * FROM questions ORDER BY RAND() LIMIT 10");
-$questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$requete = $pdo->query("SELECT * FROM questions ORDER BY RAND() LIMIT 10");
+$questions = $requete->fetchAll();
 
-$_SESSION['questions_qcm'] = array_column($questions, 'id');
+$_SESSION['qcm_questions'] = [];
 
-include 'includes/header.php';
+foreach ($questions as $question) {
+    $_SESSION['qcm_questions'][] = $question['id'];
+}
 ?>
+
+<?php require_once 'includes/header.php'; ?>
 
 <h1>QCM</h1>
 
 <?php if (count($questions) < 10): ?>
 
-    <p>Il n’y a pas assez de questions dans la base de données.</p>
-    <p>Il faut au moins 10 questions pour lancer un QCM.</p>
+    <p>Il n'y a pas encore assez de questions dans la base de données.</p>
 
 <?php else: ?>
 
-    <form action="traitement_qcm.php" method="post">
+    <p>Répondez aux 10 questions suivantes.</p>
+
+    <form action="resultat.php" method="POST">
 
         <?php foreach ($questions as $index => $question): ?>
 
             <div class="question-box">
-                <h3>Question <?= $index + 1 ?> :</h3>
-
-                <p><?= htmlspecialchars($question['question']) ?></p>
+                <h3>Question <?= $index + 1 ?> : <?= htmlspecialchars($question['question']) ?></h3>
 
                 <label>
                     <input type="radio" name="reponses[<?= $question['id'] ?>]" value="1" required>
@@ -60,10 +63,10 @@ include 'includes/header.php';
 
         <?php endforeach; ?>
 
-        <button type="submit">Valider mes réponses</button>
+        <button type="submit">Valider le QCM</button>
 
     </form>
 
 <?php endif; ?>
 
-<?php include 'includes/footer.php'; ?>
+<?php require_once 'includes/footer.php'; ?>

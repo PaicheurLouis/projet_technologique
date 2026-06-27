@@ -57,3 +57,18 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
     bloque TINYINT(1) DEFAULT 0,
     date_creation DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS tentatives (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    utilisateur_id INT NOT NULL,
+    score FLOAT NOT NULL,
+    date_tentative DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS reponses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tentative_id INT NOT NULL,
+    question_id INT NOT NULL,
+    reponse_utilisateur INT NOT NULL,
+    correcte BOOLEAN NOT NULL
+);

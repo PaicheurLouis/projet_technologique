@@ -22,6 +22,10 @@ require_once 'includes/header.php';
     <a href="deconnexion.php">Se déconnecter</a>
 </p>
 
+<p>
+    <a href="qcm.php">Lancer un QCM</a>
+</p>
+
 <?php
 require_once 'includes/footer.php';
 ?>

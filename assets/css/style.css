@@ -83,3 +83,29 @@ button {
     padding: 10px 15px;
     cursor: pointer;
 }
+.question-box {
+    background-color: white;
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+}
+
+.question-box h3 {
+    margin-top: 0;
+}
+
+.question-box label {
+    display: block;
+    margin: 8px 0;
+}
+
+.erreur {
+    border-left: 5px solid #c0392b;
+    background-color: #fff5f5;
+}
+
+button {
+    padding: 10px 15px;
+    cursor: pointer;
+}
