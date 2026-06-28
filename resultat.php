@@ -6,129 +6,166 @@ if (!isset($_SESSION['utilisateur_id'])) {
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: qcm.php');
-    exit;
-}
-
 if (!isset($_SESSION['qcm_questions']) || empty($_SESSION['qcm_questions'])) {
-    header('Location: qcm.php');
+    header('Location: profil.php');
     exit;
 }
 
 $reponses_utilisateur = $_POST['reponses'] ?? [];
 $ids_questions = $_SESSION['qcm_questions'];
 
+// Vérification du temps côté serveur
+$temps_depasse = isset($_POST['temps_depasse']) && $_POST['temps_depasse'] === '1';
+
+if (isset($_SESSION['qcm_debut'], $_SESSION['qcm_duree_secondes'])) {
+    if (time() > $_SESSION['qcm_debut'] + $_SESSION['qcm_duree_secondes'] + 5) {
+        $temps_depasse = true;
+    }
+}
+
+// Récupération des questions du QCM
 $placeholders = implode(',', array_fill(0, count($ids_questions), '?'));
 
 $requete = $pdo->prepare("SELECT * FROM questions WHERE id IN ($placeholders)");
 $requete->execute($ids_questions);
 $questions = $requete->fetchAll();
 
-$bonnes_reponses = 0;
+$score = 0;
 $details = [];
 
 foreach ($questions as $question) {
     $id_question = $question['id'];
 
-    $reponse_donnee = isset($reponses_utilisateur[$id_question])
-        ? intval($reponses_utilisateur[$id_question])
-        : 0;
+    $reponse_utilisateur = $reponses_utilisateur[$id_question] ?? null;
+    $bonne_reponse = $question['bonne_reponse'];
 
-    $est_correcte = ($reponse_donnee === intval($question['bonne_reponse']));
+    $correcte = false;
 
-    if ($est_correcte) {
-        $bonnes_reponses++;
+    if ($reponse_utilisateur !== null && (int) $reponse_utilisateur === (int) $bonne_reponse) {
+        $correcte = true;
+        $score++;
     }
 
     $details[] = [
-        'question' => $question,
-        'reponse_donnee' => $reponse_donnee,
-        'est_correcte' => $est_correcte
+        'question_id' => $id_question,
+        'question' => $question['question'],
+        'reponse_utilisateur' => $reponse_utilisateur,
+        'bonne_reponse' => $bonne_reponse,
+        'correcte' => $correcte,
+        'reponse1' => $question['reponse1'],
+        'reponse2' => $question['reponse2'],
+        'reponse3' => $question['reponse3'],
+        'reponse4' => $question['reponse4']
     ];
 }
 
-$score = $bonnes_reponses * 2;
+// Note sur 20
+$note = ($score / count($questions)) * 20;
 
-$requete = $pdo->prepare("INSERT INTO tentatives (utilisateur_id, score) VALUES (?, ?)");
-$requete->execute([$_SESSION['utilisateur_id'], $score]);
+$requeteTentative = $pdo->prepare("
+    INSERT INTO tentatives (utilisateur_id, score, date_tentative)
+    VALUES (?, ?, NOW())
+");
+
+$requeteTentative->execute([
+    $_SESSION['utilisateur_id'],
+    $note
+]);
 
 $tentative_id = $pdo->lastInsertId();
 
-foreach ($details as $detail) {
-    $requete = $pdo->prepare("
-        INSERT INTO reponses (tentative_id, question_id, reponse_utilisateur, correcte)
-        VALUES (?, ?, ?, ?)
-    ");
+// Enregistrement des réponses
+$requeteReponse = $pdo->prepare("
+    INSERT INTO reponses (tentative_id, question_id, reponse_utilisateur, correcte)
+    VALUES (?, ?, ?, ?)
+");
 
-    $requete->execute([
+foreach ($details as $detail) {
+    $requeteReponse->execute([
         $tentative_id,
-        $detail['question']['id'],
-        $detail['reponse_donnee'],
-        $detail['est_correcte'] ? 1 : 0
+        $detail['question_id'],
+        $detail['reponse_utilisateur'],
+        $detail['correcte'] ? 1 : 0
     ]);
 }
 
-unset($_SESSION['qcm_questions']);
+// Nettoyage de la session QCM
+unset($_SESSION['qcm_questions'], $_SESSION['qcm_debut'], $_SESSION['qcm_duree_secondes']);
 
-function afficher_reponse($question, $numero) {
-    if ($numero == 1) {
-        return $question['reponse1'];
-    } elseif ($numero == 2) {
-        return $question['reponse2'];
-    } elseif ($numero == 3) {
-        return $question['reponse3'];
-    } elseif ($numero == 4) {
-        return $question['reponse4'];
-    } else {
-        return "Aucune réponse";
-    }
-}
+$titre = "Résultat";
+require_once 'includes/header.php';
 ?>
 
-<?php require_once 'includes/header.php'; ?>
+<h1 class="mb-4">Résultat du QCM</h1>
 
-<h1>Résultat du QCM</h1>
+<?php if ($temps_depasse): ?>
+    <div class="alert alert-warning">
+        Le temps du QCM est écoulé. Les réponses enregistrées ont été corrigées.
+    </div>
+<?php endif; ?>
 
-<p><strong>Score :</strong> <?= $score ?>/20</p>
-<p><strong>Bonnes réponses :</strong> <?= $bonnes_reponses ?>/10</p>
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="h4">Votre score</h2>
 
-<h2>Correction</h2>
+        <p class="fs-5">
+            Vous avez obtenu :
+            <strong><?= htmlspecialchars($score) ?> / <?= htmlspecialchars(count($questions)) ?></strong>
+        </p>
 
-<?php foreach ($details as $detail): ?>
+        <p class="fs-5">
+            Note :
+            <strong><?= htmlspecialchars(number_format($note, 2)) ?> / 20</strong>
+        </p>
+    </div>
+</div>
 
-    <?php if (!$detail['est_correcte']): ?>
+<h2 class="h4 mb-3">Correction</h2>
 
-        <div class="question-box erreur">
-            <h3><?= htmlspecialchars($detail['question']['question']) ?></h3>
+<?php foreach ($details as $index => $detail): ?>
 
-            <p>
-                <strong>Votre réponse :</strong>
-                <?= htmlspecialchars(afficher_reponse($detail['question'], $detail['reponse_donnee'])) ?>
-            </p>
+    <?php if (!$detail['correcte']): ?>
+        <div class="card mb-3 erreur">
+            <div class="card-body">
+                <h3 class="h5">
+                    Question <?= $index + 1 ?> : <?= htmlspecialchars($detail['question']) ?>
+                </h3>
 
-            <p>
-                <strong>Bonne réponse :</strong>
-                <?= htmlspecialchars(afficher_reponse($detail['question'], $detail['question']['bonne_reponse'])) ?>
-            </p>
+                <p>
+                    <strong>Votre réponse :</strong>
+
+                    <?php if ($detail['reponse_utilisateur'] === null): ?>
+                        Aucune réponse
+                    <?php else: ?>
+                        <?= htmlspecialchars($detail['reponse' . $detail['reponse_utilisateur']]) ?>
+                    <?php endif; ?>
+                </p>
+
+                <p>
+                    <strong>Bonne réponse :</strong>
+                    <?= htmlspecialchars($detail['reponse' . $detail['bonne_reponse']]) ?>
+                </p>
+            </div>
         </div>
-
-        <hr>
-
     <?php endif; ?>
 
 <?php endforeach; ?>
 
-<?php if ($bonnes_reponses === 10): ?>
-    <p>Bravo, aucune erreur.</p>
+<?php
+$erreurs = array_filter($details, function ($detail) {
+    return !$detail['correcte'];
+});
+?>
+
+<?php if (empty($erreurs)): ?>
+    <div class="alert alert-success">
+        Bravo, vous avez répondu correctement à toutes les questions.
+    </div>
 <?php endif; ?>
 
-<p>
-    <a href="qcm.php">Refaire un QCM</a>
-</p>
-
-<p>
-    <a href="profil.php">Retour au profil</a>
-</p>
+<div class="mt-4">
+    <a class="btn btn-primary" href="profil.php">Retour à mon espace</a>
+    <a class="btn btn-outline-secondary" href="historique.php">Voir mon historique</a>
+</div>
 
 <?php require_once 'includes/footer.php'; ?>
