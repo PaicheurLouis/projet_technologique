@@ -70,15 +70,15 @@ require_once '../includes/header.php';
             <td><?= $utilisateur['bloque'] ? 'Oui' : 'Non' ?></td>
             <td>
                 <?php if ($utilisateur['bloque']): ?>
-                    <a href="utilisateurs.php?debloquer=<?= $utilisateur['id'] ?>">Débloquer</a>
+                    <a href="/qcm/admin/utilisateurs.php?debloquer=<?= $utilisateur['id'] ?>">Débloquer</a>
                 <?php else: ?>
-                    <a href="utilisateurs.php?bloquer=<?= $utilisateur['id'] ?>">Bloquer</a>
+                    <a href="/qcm/admin/utilisateurs.php?bloquer=<?= $utilisateur['id'] ?>">Bloquer</a>
                 <?php endif; ?>
 
                 |
 
                 <?php if ($utilisateur['id'] != $_SESSION['utilisateur_id']): ?>
-                    <a href="utilisateurs.php{supprimer=<?= $utilisateur['id'] ?>" onclick="return confirm('Supprimer cet utilisateur ?')">Supprimer</a>
+                    <a class="btn btn-sm btn-danger" href="/qcm/admin/utilisateurs.php?supprimer=<?= $utilisateur['id'] ?>" onclick="return confirm('Supprimer cet utilisateur ?')">Supprimer</a>
                 <?php else: ?>
                     Impossible
                 <?php endif; ?>
